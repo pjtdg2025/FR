@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: funding-rate-alert-bot
+    runtime: python
+    plan: free
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_TOKEN
+        value: 7602575751:AAFLeulkFLCz5uhh6oSk39Er6Frj9yyjts0
+      - key: TELEGRAM_CHAT_ID
+        value: YOUR_CHAT_ID
