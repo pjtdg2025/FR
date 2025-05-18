@@ -1,6 +1,7 @@
 import os
 import asyncio
 import aiohttp
+from aiohttp import web
 from utils import funding
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -16,23 +17,24 @@ async def send_telegram_message(message):
 async def alert_callback(message):
     await send_telegram_message(message)
 
-async def check_and_alert():
+async def run_checks():
     loop = asyncio.get_event_loop()
 
     def callback_sync(msg):
-        # Schedule async send_telegram_message from sync callback
         asyncio.run_coroutine_threadsafe(send_telegram_message(msg), loop)
 
-    # Use the funding module's check_all_exchanges, passing callback_sync
     funding.check_all_exchanges(callback_sync)
 
-async def main_loop():
-    while True:
-        try:
-            await check_and_alert()
-        except Exception as e:
-            print(f"Error: {e}")
-        await asyncio.sleep(60)
+async def handle_check(request):
+    try:
+        await run_checks()
+        return web.Response(text="Funding check done, alerts sent if applicable.")
+    except Exception as e:
+        return web.Response(text=f"Error: {e}", status=500)
 
-if __name__ == "__main__":
-    asyncio.run(main_loop())
+app = web.Application()
+app.add_routes([web.get('/check_funding', handle_check)])
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 8000))
+    web.run_app(app, port=port)
